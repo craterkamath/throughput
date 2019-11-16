@@ -28,10 +28,11 @@ cap = cv2.VideoCapture(sys.argv[1])
 fgbg = cv2.createBackgroundSubtractorMOG2(100, 50, False)
 # trackers = cv2.MultiTracker_create()
 INIT = True
-MAX_COUNT = 25
+MAX_COUNT = 100
 GEN_IMAGES = False
 GEN_COUNT = 1000
 SHOW_OUTPUT = True
+FULL_IMAGE = False
 ptr = 0
 object_q = []
 active_q = []
@@ -221,7 +222,11 @@ while(object_q or active_q):
 				# cv2.waitKey(0)
 
 
-				frame_content = cv2.bitwise_and(blend_frame, blend_frame, mask = blend_mask)
+				if FULL_IMAGE:
+					frame_content = blend_frame
+				else:
+					frame_content = cv2.bitwise_and(blend_frame, blend_frame, mask = blend_mask)
+				
 
 				# print(frame_content.dtype)
 				# print(overlap_mask.dtype)
@@ -255,10 +260,13 @@ while(object_q or active_q):
 				# cv2.imshow("Frame", output_frame)
 				# cv2.imshow("Object", output_object)
 				# cv2.waitKey(0)
-
-				output_object = cv2.bitwise_and(frame_content, frame_content, mask = output_mask)
-				output_frame = cv2.addWeighted(output_frame, 1.0, output_object, 1, 0.0)
-	except:
+				if FULL_IMAGE:
+					output_object = cv2.bitwise_and(frame_content, frame_content, mask = overlap_mask_1d)
+				else:
+					output_object = cv2.bitwise_and(frame_content, frame_content, mask = output_mask)
+				output_frame = cv2.addWeighted(output_frame, 0.4, output_object, 0.1, 0.0)
+	except Exception as e:
+		# print(e)
 		print("Error in Frame: {0}".format(frame_number))
 
 	output_video.append(output_frame)
@@ -272,7 +280,7 @@ for img in output_video:
 	cv2.imshow("Output", img)
 	cv2.waitKey(0)
 
-# out = cv2.VideoWriter('out_video.avi', -1, 21, output_video[0].shape[:2])
-# for img in output_video:
-# 	out.write(img)
-# out.release()
+out = cv2.VideoWriter('out_video.avi', cv2.VideoWriter_fourcc(*"XVID"), 60, (output_video[0].shape[1],output_video[0].shape[0]) )
+for img in output_video:
+	out.write(img)
+out.release()
