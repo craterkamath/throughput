@@ -49,6 +49,31 @@ def doOverlap(l1x, l1y , r1x, r1y, l2x, l2y, r2x, r2y):
   
     return True
 
+def blend_non_transparent(bg_img, overlay_img):
+    # Let's find a mask covering all the non-black (foreground) pixels
+    # NB: We need to do this on grayscale version of the image
+    gray_overlay = cv2.cvtColor(overlay_img, cv2.COLOR_BGR2GRAY)
+    overlay_mask = cv2.threshold(gray_overlay, 1, 255, cv2.THRESH_BINARY)[1]
+
+    # Let's shrink and blur it a little to make the transitions smoother...
+    overlay_mask = cv2.erode(overlay_mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+    overlay_mask = cv2.blur(overlay_mask, (3, 3))
+
+    # And the inverse mask, that covers all the black (background) pixels
+    background_mask = 255 - overlay_mask
+
+    # Turn the masks into three channel, so we can use them as weights
+    overlay_mask = cv2.cvtColor(overlay_mask, cv2.COLOR_GRAY2BGR)
+    background_mask = cv2.cvtColor(background_mask, cv2.COLOR_GRAY2BGR)
+
+    # Create a masked out face image, and masked out overlay
+    # We convert the images to floating point in range 0.0 - 1.0
+    face_part = (bg_img * (1 / 255.0)) * (background_mask * (1 / 255.0))
+    overlay_part = (overlay_img * (1 / 255.0)) * (overlay_mask * (1 / 255.0))
+
+    # And finally just add them together, and rescale it back to an 8bit integer image
+    return np.uint8(cv2.addWeighted(face_part, 255.0, overlay_part, 255.0, 0.0))
+
 class Node:
 	def __init__(self, data, masks, boxes, tracker):
 		self.data = data
@@ -228,43 +253,45 @@ while(object_q or active_q):
 					frame_content = cv2.bitwise_and(blend_frame, blend_frame, mask = blend_mask)
 				
 
-				# print(frame_content.dtype)
-				# print(overlap_mask.dtype)
-				# print(frame_content.shape)
-				# print(overlap_mask.shape)
+				# # print(frame_content.dtype)
+				# # print(overlap_mask.dtype)
+				# # print(frame_content.shape)
+				# # print(overlap_mask.shape)
 
 
-				# cv2.imshow("Frame Content", frame_content)
-				# cv2.imshow("Overlap Mask", overlap_mask)
-				# cv2.waitKey(0)
+				# # cv2.imshow("Frame Content", frame_content)
+				# # cv2.imshow("Overlap Mask", overlap_mask)
+				# # cv2.waitKey(0)
 
-				# output_object = cv2.bitwise_and(frame_content, frame_content,mask = overlap_mask)
+				# # output_object = cv2.bitwise_and(frame_content, frame_content,mask = overlap_mask)
 
 
-				# print(blend_frame.dtype)
-				# print(blend_mask.dtype)
-				# print(overlap_mask.dtype)
-				# print(blend_frame.shape)
-				# print(blend_mask.shape)
-				# print(overlap_mask.shape)
-				# cv2.imshow("Blend Frame", blend_frame)
-				# cv2.imshow("Blend Mask", blend_mask)
-				# cv2.imshow("Overlap Mask", overlap_mask)
-				# cv2.waitKey(0)
+				# # print(blend_frame.dtype)
+				# # print(blend_mask.dtype)
+				# # print(overlap_mask.dtype)
+				# # print(blend_frame.shape)
+				# # print(blend_mask.shape)
+				# # print(overlap_mask.shape)
+				# # cv2.imshow("Blend Frame", blend_frame)
+				# # cv2.imshow("Blend Mask", blend_mask)
+				# # cv2.imshow("Overlap Mask", overlap_mask)
+				# # cv2.waitKey(0)
 
-				overlap_mask_1d, _, _ = cv2.split(overlap_mask)
-				# import pdb; pdb.set_trace()
-				output_mask = cv2.bitwise_and(blend_mask, blend_mask, mask = overlap_mask_1d)
-				output_mask_inv = cv2.bitwise_not(output_mask)
+				# overlap_mask_1d, _, _ = cv2.split(overlap_mask)
+				# # import pdb; pdb.set_trace()
+				# output_mask = cv2.bitwise_and(blend_mask, blend_mask, mask = overlap_mask_1d)
+				# output_mask_inv = cv2.bitwise_not(output_mask)
 
-				# cv2.imshow("Frame", output_frame)
-				# cv2.imshow("Object", output_object)
-				# cv2.waitKey(0)
-				if FULL_IMAGE:
-					output_object = cv2.bitwise_and(frame_content, frame_content, mask = overlap_mask_1d)
-				else:
-					output_object = cv2.bitwise_and(frame_content, frame_content, mask = output_mask)
-				output_frame = cv2.addWeighted(output_frame, 0.4, output_object, 0.1, 0.0)
+				# # cv2.imshow("Frame", output_frame)
+				# # cv2.imshow("Object", output_object)
+				# # cv2.waitKey(0)
+				# if FULL_IMAGE:
+				# 	output_object = cv2.bitwise_and(frame_content, frame_content, mask = overlap_mask_1d)
+				# else:
+				# 	output_object = cv2.bitwise_and(frame_content, frame_content, mask = output_mask)
+				# output_frame = cv2.addWeighted(output_frame, 1.0, output_object, 0.9, -10.0)
+				
+				output_frame = blend_non_transparent(output_frame, frame_content)
 	except Exception as e:
 		# print(e)
 		print("Error in Frame: {0}".format(frame_number))
