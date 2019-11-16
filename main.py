@@ -6,6 +6,8 @@ fgbg = cv2.createBackgroundSubtractorMOG2(100, 25, False)
 sample_tracker = cv2.TrackerCSRT_create()
 INIT = True
 MAX_COUNT = 25
+GEN_IMAGES = False
+ptr = 0
 
 class Node:
 	def __init__(self, data, masks, boxes, tracker):
@@ -77,7 +79,10 @@ while(cap.isOpened()):
 			hull = cv2.convexHull(contour)
 			rect = cv2.boundingRect(hull)
 			x, y, w, h = rect
-
+			
+			if GEN_IMAGES:
+				cv2.imwrite("image{0}.png".format(ptr), frame[y:y+h, x:x+w])
+				ptr += 1
 
 			if(cv2.contourArea(contour) > 180):
 				convex_hulls.append(hull)
