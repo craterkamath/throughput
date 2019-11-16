@@ -108,7 +108,7 @@ class Node:
 					if dist_norm < min_value:
 						min_idx = idx
 						min_value = dist_norm
-				self.addFrame(frame, mask, bboxes[min_idx])
+				self.addFrame(frame, mask, box)
 				return min_idx
 			else:
 				self.addFrame(frame, mask, box)
@@ -153,7 +153,7 @@ while(cap.isOpened()):
 				cv2.imwrite("image{0}.png".format(ptr), frame[y:y+h, x:x+w])
 				ptr += 1
 
-			if(cv2.contourArea(contour) > 300):
+			if(cv2.contourArea(contour) > 250):
 				convex_hulls.append(hull)
 				hull_boxes.append(rect)
 				cv2.rectangle(frame_cpy, (x, y), (x+w, y+h), (0, 255, 0), 2)
@@ -253,44 +253,44 @@ while(object_q or active_q):
 					frame_content = cv2.bitwise_and(blend_frame, blend_frame, mask = blend_mask)
 				
 
-				# # print(frame_content.dtype)
-				# # print(overlap_mask.dtype)
-				# # print(frame_content.shape)
-				# # print(overlap_mask.shape)
+				# print(frame_content.dtype)
+				# print(overlap_mask.dtype)
+				# print(frame_content.shape)
+				# print(overlap_mask.shape)
 
 
-				# # cv2.imshow("Frame Content", frame_content)
-				# # cv2.imshow("Overlap Mask", overlap_mask)
-				# # cv2.waitKey(0)
+				# cv2.imshow("Frame Content", frame_content)
+				# cv2.imshow("Overlap Mask", overlap_mask)
+				# cv2.waitKey(0)
 
-				# # output_object = cv2.bitwise_and(frame_content, frame_content,mask = overlap_mask)
+				# output_object = cv2.bitwise_and(frame_content, frame_content,mask = overlap_mask)
 
 
-				# # print(blend_frame.dtype)
-				# # print(blend_mask.dtype)
-				# # print(overlap_mask.dtype)
-				# # print(blend_frame.shape)
-				# # print(blend_mask.shape)
-				# # print(overlap_mask.shape)
-				# # cv2.imshow("Blend Frame", blend_frame)
-				# # cv2.imshow("Blend Mask", blend_mask)
-				# # cv2.imshow("Overlap Mask", overlap_mask)
-				# # cv2.waitKey(0)
+				# print(blend_frame.dtype)
+				# print(blend_mask.dtype)
+				# print(overlap_mask.dtype)
+				# print(blend_frame.shape)
+				# print(blend_mask.shape)
+				# print(overlap_mask.shape)
+				# cv2.imshow("Blend Frame", blend_frame)
+				# cv2.imshow("Blend Mask", blend_mask)
+				# cv2.imshow("Overlap Mask", overlap_mask)
+				# cv2.waitKey(0)
 
-				# overlap_mask_1d, _, _ = cv2.split(overlap_mask)
-				# # import pdb; pdb.set_trace()
-				# output_mask = cv2.bitwise_and(blend_mask, blend_mask, mask = overlap_mask_1d)
-				# output_mask_inv = cv2.bitwise_not(output_mask)
+				overlap_mask_1d, _, _ = cv2.split(overlap_mask)
+				# import pdb; pdb.set_trace()
+				output_mask = cv2.bitwise_and(blend_mask, blend_mask, mask = overlap_mask_1d)
+				output_mask_inv = cv2.bitwise_not(output_mask)
 
-				# # cv2.imshow("Frame", output_frame)
-				# # cv2.imshow("Object", output_object)
-				# # cv2.waitKey(0)
-				# if FULL_IMAGE:
-				# 	output_object = cv2.bitwise_and(frame_content, frame_content, mask = overlap_mask_1d)
-				# else:
-				# 	output_object = cv2.bitwise_and(frame_content, frame_content, mask = output_mask)
-				# output_frame = cv2.addWeighted(output_frame, 1.0, output_object, 0.9, -10.0)
+				# cv2.imshow("Frame", output_frame)
+				# cv2.imshow("Object", output_object)
+				# cv2.waitKey(0)
+				if FULL_IMAGE:
+					output_object = cv2.bitwise_and(frame_content, frame_content, mask = overlap_mask_1d)
+				else:
+					output_object = cv2.bitwise_and(frame_content, frame_content, mask = output_mask)
 				
+				# output_frame = cv2.addWeighted(output_frame, 1.0, output_object, 0.9, -10.0)
 				output_frame = blend_non_transparent(output_frame, frame_content)
 	except Exception as e:
 		# print(e)
@@ -307,7 +307,7 @@ for img in output_video:
 	cv2.imshow("Output", img)
 	cv2.waitKey(0)
 
-out = cv2.VideoWriter('out_video.avi', cv2.VideoWriter_fourcc(*"XVID"), 60, (output_video[0].shape[1],output_video[0].shape[0]) )
+out = cv2.VideoWriter('out_video.avi', cv2.VideoWriter_fourcc(*"MJPG"), 60, (output_video[0].shape[1],output_video[0].shape[0]) )
 for img in output_video:
 	out.write(img)
 out.release()
