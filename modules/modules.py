@@ -3,6 +3,7 @@ from yolokeras import yolo
 from PIL import Image
 import numpy as np
 
+
 def model_classifier(image):
 	new_im = Image.fromarray(image)
 	if not os.path.exists('yolokeras/images'):
